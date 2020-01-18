@@ -132,7 +132,9 @@ namespace SharpProto
           sbPublic.AppendFormat("  const {0}{2} {1}() const {{ return {1}_; }}\n", typeName, fieldInfo.Name, reference);
           sbPublic.AppendFormat("  void set_{1}(const {0}{2} val) {{ {1}_ = val; }}\n", typeName, fieldInfo.Name, reference);
           sbPublic.AppendFormat("  {0}* mutable_{1}() {{ return &{1}_; }}\n", typeName, fieldInfo.Name);
-          sbPrivate.AppendFormat("  {0} {1}_; // = {2}\n", typeName, fieldInfo.Name, fieldAttr.ID);
+
+          sbPrivate.AppendFormat("  " + WriteFiledComment(fieldInfo));
+          sbPrivate.AppendFormat("  {0} {1}_;\n", typeName, fieldInfo.Name);
 
           DebugStringField(sbDebugString, fieldInfo, 4);
 
