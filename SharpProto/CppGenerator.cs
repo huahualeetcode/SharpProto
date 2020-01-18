@@ -93,7 +93,7 @@ namespace SharpProto
       var sbParseFromString = new StringBuilder();
 
       sbDebugString.AppendFormat("  std::string DebugString() const {{\n");
-      sbDebugString.AppendFormat("    std::string str;\n");
+      sbDebugString.AppendFormat("    std::ostringstream ss;\n");
 
       sbSerializeAsString.AppendFormat("  std::string SerializeAsString() const {{\n");
       sbSerializeAsString.AppendFormat("    std::ostringstream ss;\n");
@@ -134,21 +134,7 @@ namespace SharpProto
           sbPublic.AppendFormat("  {0}* mutable_{1}() {{ return &{1}_; }}\n", typeName, fieldInfo.Name);
           sbPrivate.AppendFormat("  {0} {1}_; // = {2}\n", typeName, fieldInfo.Name, fieldAttr.ID);
 
-          sbDebugString.AppendFormat("    str += std::string(\"{0}\")", fieldInfo.Name);
-          if (isMessage)
-          {
-            sbDebugString.AppendFormat(" + \" {{\\n\";\n");
-            sbDebugString.AppendFormat("    str += {0}_.DebugString();\n", fieldInfo.Name);
-            sbDebugString.AppendFormat("    str += \"}}\\n\";\n");
-          }
-          else if (fieldType == typeof(string))
-          {
-            sbDebugString.AppendFormat(" + \" : \\\"\" + {0}_ + \"\\\"\\n\";\n", fieldInfo.Name);
-          }
-          else
-          {
-            sbDebugString.AppendFormat(" + \" : \" + std::to_string({0}_) + '\\n';\n", fieldInfo.Name);
-          }
+          DebugStringField(sbDebugString, fieldInfo, 4);
 
           SerializeField(sbSerializeAsString, fieldInfo, 4);
 
@@ -156,7 +142,7 @@ namespace SharpProto
         }
       }
 
-      sbDebugString.Append("    return str;\n");
+      sbDebugString.Append("    return ss.str();\n");
       sbDebugString.Append("  }\n");
 
       sbSerializeAsString.Append("    return ss.str();\n");
@@ -170,7 +156,7 @@ namespace SharpProto
       sb.AppendFormat(" public:\n");
 
       sb.Append(sbPublic);
-
+      sb.AppendLine();
       sb.Append(sbDebugString);
       sb.AppendLine();
       sb.Append(sbSerializeAsString);
@@ -305,6 +291,31 @@ namespace SharpProto
       }
 
       sb.AppendFormat("".PadLeft(tabSize - 2, ' ') + "}}");
+    }
+
+    private void DebugStringField(StringBuilder sb, FieldInfo fieldInfo, int tabSize)
+    {
+      var fieldAttr = fieldInfo.GetCustomAttribute<FieldAttribute>();
+      var fieldType = fieldInfo.FieldType;
+      var isMessage = fieldType.GetCustomAttribute<MessageAttribute>() != null;
+
+      var ind = "".PadLeft(tabSize, ' ');
+
+      sb.AppendFormat(ind + "ss << \"{0}\"", fieldInfo.Name);
+      if (isMessage)
+      {
+        sb.AppendFormat(" << \" {{\\n\";\n");
+        sb.AppendFormat(ind + "ss << {0}_.DebugString();\n", fieldInfo.Name);
+        sb.AppendFormat(ind + "ss << \"}}\\n\";\n");
+      }
+      else if (fieldType == typeof(string))
+      {
+        sb.AppendFormat(" << \" : \\\"\" << {0}_ << \"\\\"\\n\";\n", fieldInfo.Name);
+      }
+      else
+      {
+        sb.AppendFormat(" << \" : \" << {0}_ << '\\n';\n", fieldInfo.Name);
+      }
     }
   }
 }
