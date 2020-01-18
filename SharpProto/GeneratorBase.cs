@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.CodeDom.Compiler;
+using Microsoft.CSharp;
+using System.IO;
 
 namespace SharpProto
 {
-    public class CompilerBase
-    {
+    public class GeneratorBase
+    {        
         private List<Type> primitiveTypes = new List<Type>()
         {
             typeof(Int32),
@@ -13,10 +17,31 @@ namespace SharpProto
             typeof(String),
             typeof(Single),
             typeof(Double)
-        };        
+        };
         
-        public CompilerBase()
+        public GeneratorBase()
         {
+        }
+
+        protected void CompileProto(string Filename) {
+
+            var code = File.ReadAllText(Filename);
+
+            Console.WriteLine("Compling");
+            Console.WriteLine(code);
+
+            var refs = AppDomain.CurrentDomain.GetAssemblies();
+            var refFiles = refs.Where(a => !a.IsDynamic).Select(a => a.Location).ToArray();
+            CSharpCodeProvider provider = new CSharpCodeProvider();
+            var compileParams = new System.CodeDom.Compiler.CompilerParameters()
+            {
+                GenerateInMemory = true,
+                GenerateExecutable = false,
+                TreatWarningsAsErrors = false
+            };
+
+            var compilerResult = provider.CompileAssemblyFromSource(compileParams, code);
+            var asm = compilerResult.CompiledAssembly;
         }
 
         public bool ValidateProto(Type protoType)

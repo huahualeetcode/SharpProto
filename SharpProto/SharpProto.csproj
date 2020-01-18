@@ -8,4 +8,7 @@
   <ItemGroup>
     <Compile Remove="FieldAttribute.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.CodeDom" Version="4.7.0" />
+  </ItemGroup>
 </Project>
