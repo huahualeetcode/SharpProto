@@ -90,12 +90,25 @@ namespace SharpProto
       var sbPrivate = new StringBuilder();
       var sbDebugString = new StringBuilder();
       var sbSerializeAsString = new StringBuilder();
+      var sbParseFromString = new StringBuilder();
 
       sbDebugString.AppendFormat("  std::string DebugString() const {{\n");
       sbDebugString.AppendFormat("    std::string str;\n");
 
       sbSerializeAsString.AppendFormat("  std::string SerializeAsString() const {{\n");
       sbSerializeAsString.AppendFormat("    std::ostringstream ss;\n");
+
+      sbParseFromString.AppendFormat("  bool ParseFromString(const std::string& str) {{\n");
+      sbParseFromString.AppendFormat("    std::istringstream ss(str);\n");
+      sbParseFromString.AppendFormat("    int head;\n");            
+      sbParseFromString.AppendFormat("    while (!ss.eof()) {{\n");
+      sbParseFromString.AppendFormat("      ss.read(reinterpret_cast<char*>(&head), 4);\n");
+      sbParseFromString.AppendFormat("      int tag = head >> 3;\n");
+      sbParseFromString.AppendFormat("      int type = head & 0x07;\n");
+      sbParseFromString.AppendFormat("      if (false) {{ \n");
+      sbParseFromString.AppendFormat("      // DO NOTHING HERE \n");
+      sbParseFromString.AppendFormat("      }}");
+
 
       foreach (var fieldInfo in t.GetFields())
       {
@@ -113,7 +126,6 @@ namespace SharpProto
         }
         else
         {
-
           // primitive types, e.g int
           var reference = nonReferenceTypes.Contains(fieldType.Name) ? "" : "&";
           var typeName = GetTypeName(fieldType.Name);
@@ -138,7 +150,9 @@ namespace SharpProto
             sbDebugString.AppendFormat(" + \" : \" + std::to_string({0}_) + '\\n';\n", fieldInfo.Name);
           }
 
-          WriteField(sbSerializeAsString, fieldInfo, 4);
+          SerializeField(sbSerializeAsString, fieldInfo, 4);
+
+          DeseializeField(sbParseFromString, fieldInfo, 8);
         }
       }
 
@@ -148,12 +162,21 @@ namespace SharpProto
       sbSerializeAsString.Append("    return ss.str();\n");
       sbSerializeAsString.Append("  }\n");
 
+      sbParseFromString.AppendFormat("\n");
+      sbParseFromString.AppendFormat("    }}\n");
+      sbParseFromString.Append("    return true;\n");
+      sbParseFromString.Append("  }\n");
+
       sb.AppendFormat(" public:\n");
 
       sb.Append(sbPublic);
 
       sb.Append(sbDebugString);
+      sb.AppendLine();
       sb.Append(sbSerializeAsString);
+      sb.AppendLine();
+      sb.Append(sbParseFromString);
+      sb.AppendLine();
 
       sb.AppendFormat(" private:\n");
 
@@ -194,7 +217,24 @@ namespace SharpProto
       return string.Format("long {0} = {1}; ", varName, val) + WriteLVal(varName, 8);
     }
 
-    private void WriteField(StringBuilder sb, FieldInfo fieldInfo, int tabSize)
+    private string ReadVal(string name, int bytes)
+    {
+      return string.Format("ss.read(reinterpret_cast<char*>(&{0}), {1});\n", name, bytes);
+    }
+
+    private string ReadString(string name, string length)
+    {
+      return string.Format("ss.read(&{0}[0], {1});\n", name, length);
+    }
+
+    private string WriteFiledComment(FieldInfo fieldInfo)
+    {
+      var fieldAttr = fieldInfo.GetCustomAttribute<FieldAttribute>();
+      var fieldType = fieldInfo.FieldType;            
+      return string.Format("// tag = {0}, name = {1}, type = {2}\n", fieldAttr.ID, fieldInfo.Name, fieldType.Name);
+    }
+
+    private void SerializeField(StringBuilder sb, FieldInfo fieldInfo, int tabSize)
     {     
       var fieldAttr = fieldInfo.GetCustomAttribute<FieldAttribute>();
       var fieldType = fieldInfo.FieldType;
@@ -208,7 +248,7 @@ namespace SharpProto
       FieldEncodingType encodingType = GetFieldEncodingType(fieldType);
 
       int head = (fieldAttr.ID << 3) | (int)encodingType;
-      sb.AppendFormat(indentation + "// tag = {0}, name = {1}, type = {2}\n", fieldAttr.ID, fieldInfo.Name, fieldType.Name);
+      sb.Append(indentation + WriteFiledComment(fieldInfo));
       sb.AppendFormat(indentation + WriteLiteral32(fieldInfo.Name + "_head", head));
 
       if (encodingType == FieldEncodingType.FieldEncodingType32Bits || encodingType == FieldEncodingType.FieldEncodingType64Bits)
@@ -229,6 +269,42 @@ namespace SharpProto
       }      
 
       sb.Append(ind + "}\n");
+    }   
+
+    private void DeseializeField(StringBuilder sb, FieldInfo fieldInfo, int tabSize)
+    {
+      var fieldAttr = fieldInfo.GetCustomAttribute<FieldAttribute>();
+      var fieldType = fieldInfo.FieldType;
+      var isMessage = fieldType.GetCustomAttribute<MessageAttribute>() != null;
+
+      var ind = "".PadLeft(tabSize, ' ');
+      sb.AppendFormat(" else if (tag == {0}) {{\n", fieldAttr.ID);
+      sb.Append(ind + WriteFiledComment(fieldInfo));
+
+      FieldEncodingType encodingType = GetFieldEncodingType(fieldType);
+
+      if (encodingType == FieldEncodingType.FieldEncodingType32Bits || encodingType == FieldEncodingType.FieldEncodingType64Bits)
+      {
+        sb.AppendFormat(ind + ReadVal(fieldInfo.Name + "_", encodingType == FieldEncodingType.FieldEncodingType32Bits ? 4 : 8));
+      }
+      else if (fieldType == typeof(string))
+      {
+        sb.AppendFormat(ind + "int length = 0;\n");
+        sb.AppendFormat(ind +  ReadVal("length", 4));
+        sb.AppendFormat(ind + "{0}_.resize(length);\n", fieldInfo.Name);
+        sb.AppendFormat(ind + ReadString(fieldInfo.Name + "_", "length"));
+      }
+      else if (isMessage)
+      {
+        sb.AppendFormat(ind + "int length = 0;\n");
+        sb.AppendFormat(ind + ReadVal("length", 4));
+        sb.AppendFormat(ind + "std::string buffer;\n");
+        sb.AppendFormat(ind + "buffer.resize(length);\n");
+        sb.AppendFormat(ind + ReadString("buffer", "length"));
+        sb.AppendFormat(ind + "{0}_.ParseFromString(buffer);\n", fieldInfo.Name);
+      }
+
+      sb.AppendFormat("".PadLeft(tabSize - 2, ' ') + "}}");
     }
   }
 }
