@@ -127,7 +127,7 @@ namespace SharpProto
                         sbDebugString.AppendFormat(" + \" : \\\"\" + {0}_ + \"\\\"\\n\";\n", fieldInfo.Name);
                     } else
                     {
-                        sbDebugString.AppendFormat(" + \" : \" + std::to_string({0}_) + '\\n';\n\n", fieldInfo.Name);
+                        sbDebugString.AppendFormat(" + \" : \" + std::to_string({0}_) + '\\n';\n", fieldInfo.Name);
                     }
                 }
             }

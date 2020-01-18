@@ -1,0 +1,17 @@
+﻿namespace SharpProto
+{
+    [Message]
+    public struct Test1
+    {
+        [Field(1)]
+        public string name;
+        [Field(2)]
+        public int id;
+        [Field(3)]
+        public long uuid;
+        [Field(4)]
+        public double height;
+        [Field(5)]
+        public float money;
+    }    
+}

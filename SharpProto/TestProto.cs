@@ -5,7 +5,6 @@
     {
         [Field(1)]
         public string name;
-
         [Field(2)]
         public int id;
     }
@@ -15,10 +14,8 @@
     {
         [Field(1)]
         public string name;
-
         [Field(2)]
         public Person member1;
-
         [Field(3)]
         public Person member2;
     }
