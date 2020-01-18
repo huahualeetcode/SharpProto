@@ -8,4 +8,12 @@
   <ItemGroup>
     <Compile Remove="FieldAttribute.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.CodeDom" Version="4.7.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.4.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="mylib.dll" />
+    <None Remove="proto.dll" />
+  </ItemGroup>
 </Project>

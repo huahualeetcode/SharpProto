@@ -20,6 +20,9 @@ namespace SharpProto
         public string name;
 
         [Field(2)]
-        public IList<Person> members;        
+        public Person member1;
+
+        [Field(3)]
+        public Person member2;
     }
 }
