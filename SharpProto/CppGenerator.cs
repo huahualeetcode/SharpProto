@@ -1,14 +1,18 @@
 ﻿using System;
+<<<<<<< HEAD
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 
+=======
+>>>>>>> f0238a0a914b496967a7c1cc0d8c074702807f62
 namespace SharpProto
 {
     public class CppGenerator : GeneratorBase, IGenerator
     {
+<<<<<<< HEAD
         protected readonly Dictionary<string, string> primitiveTypeMapping = new Dictionary<string, string>()
         {
             {"String", "std::string" },
@@ -26,12 +30,15 @@ namespace SharpProto
             "Double"
         };
 
+=======
+>>>>>>> f0238a0a914b496967a7c1cc0d8c074702807f62
         public CppGenerator()
         {
         }
 
         public bool Generate(string Filename, string OutputDir)
         {
+<<<<<<< HEAD
             var assembly = base.CompileProto(Filename);
 
             var types = base.ValidateProtos(assembly);
@@ -124,5 +131,11 @@ namespace SharpProto
 
             return sb.ToString();
         }        
+=======
+            base.CompileProto(Filename);
+
+            return false;
+        }
+>>>>>>> f0238a0a914b496967a7c1cc0d8c074702807f62
     }
 }
