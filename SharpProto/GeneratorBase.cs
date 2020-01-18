@@ -89,7 +89,7 @@ namespace SharpProto
             }
 
             return ordered.ToArray();
-        }
+        }        
 
         private void TopologicalSorting(Type cur, HashSet<Type> seen, IList<Type> ordered)
         {

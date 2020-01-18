@@ -17,4 +17,11 @@ namespace SharpProto
     public class MessageAttribute : System.Attribute
     {
     }
+
+    public enum FieldEncodingType
+    {
+        FieldEncodingType32Bits = 1,
+        FieldEncodingType64Bits = 2,
+        FieldEncodingTypeFixedLength = 3,
+    }
 }
