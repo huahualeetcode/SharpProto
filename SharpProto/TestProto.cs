@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace SharpProto
+﻿namespace SharpProto
 {
     [Message]
     public struct Person

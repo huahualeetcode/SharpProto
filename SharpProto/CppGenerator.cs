@@ -1,18 +1,14 @@
 ﻿using System;
-<<<<<<< HEAD
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 
-=======
->>>>>>> f0238a0a914b496967a7c1cc0d8c074702807f62
 namespace SharpProto
 {
     public class CppGenerator : GeneratorBase, IGenerator
     {
-<<<<<<< HEAD
         protected readonly Dictionary<string, string> primitiveTypeMapping = new Dictionary<string, string>()
         {
             {"String", "std::string" },
@@ -30,22 +26,19 @@ namespace SharpProto
             "Double"
         };
 
-=======
->>>>>>> f0238a0a914b496967a7c1cc0d8c074702807f62
         public CppGenerator()
         {
         }
 
         public bool Generate(string Filename, string OutputDir)
         {
-<<<<<<< HEAD
             var assembly = base.CompileProto(Filename);
 
             var types = base.ValidateProtos(assembly);
 
             var stem = Path.GetFileNameWithoutExtension(Filename);
 
-            var hFilename = Path.Join(OutputDir, stem + ".pb.h");            
+            var hFilename = Path.Join(OutputDir, stem + ".pb.h");
 
             File.WriteAllText(hFilename, GenerateHeader(stem, types));
             return true;
@@ -83,7 +76,7 @@ namespace SharpProto
 
         private string GetTypeName(string name)
         {
-            return primitiveTypeMapping.ContainsKey(name) ? primitiveTypeMapping[name] : name;            
+            return primitiveTypeMapping.ContainsKey(name) ? primitiveTypeMapping[name] : name;
         }
 
         private string GenerateClassDef(Type t)
@@ -91,16 +84,19 @@ namespace SharpProto
             var sb = new StringBuilder();
 
             sb.AppendFormat("class {0} {{\n", t.Name);
-            
+
             var sbPublic = new StringBuilder();
             var sbPrivate = new StringBuilder();
-           
-            
+            var sbDebugString = new StringBuilder();
+
+            sbDebugString.AppendFormat("  std::string DebugString() const {{\n");
+            sbDebugString.AppendFormat("    std::string str;\n");
+
             foreach (var fieldInfo in t.GetFields())
             {
-                var fieldAttr = fieldInfo.GetCustomAttribute<FieldAttribute>();                
-
+                var fieldAttr = fieldInfo.GetCustomAttribute<FieldAttribute>();           
                 var fieldType = fieldInfo.FieldType;
+                var isMessage = fieldType.GetCustomAttribute<MessageAttribute>() != null;
 
                 if (fieldType.IsGenericType)
                 {
@@ -109,19 +105,41 @@ namespace SharpProto
                         var argType = fieldType.GetGenericArguments()[0];
                         throw new NotSupportedException("repeated fields not supported yet");
                     }
-                } else {                
+                }
+                else
+                {
                     // primitive types, e.g int
                     var reference = nonReferenceTypes.Contains(fieldType.Name) ? "" : "&";
                     var typeName = GetTypeName(fieldType.Name);
                     sbPublic.AppendFormat("  const {0}{2} {1}() const {{ return {1}_; }}\n", typeName, fieldInfo.Name, reference);
                     sbPublic.AppendFormat("  void set_{1}(const {0}{2} val) {{ {1}_ = val; }}\n", typeName, fieldInfo.Name, reference);
+                    sbPublic.AppendFormat("  {0}* mutable_{1}() {{ return &{1}_; }}\n", typeName, fieldInfo.Name);
                     sbPrivate.AppendFormat("  {0} {1}_; // = {2}\n", typeName, fieldInfo.Name, fieldAttr.ID);
-                }                  
+
+                    sbDebugString.AppendFormat("    str += std::string(\"{0}\")", fieldInfo.Name);
+                    if (isMessage)
+                    {
+                        sbDebugString.AppendFormat(" + \" {{\\n\";\n");
+                        sbDebugString.AppendFormat("    str += {0}_.DebugString();\n", fieldInfo.Name);
+                        sbDebugString.AppendFormat("    str += \"}}\\n\";\n");
+                    } else if (fieldType == typeof(string))
+                    {
+                        sbDebugString.AppendFormat(" + \" : \\\"\" + {0}_ + \"\\\"\\n\";\n", fieldInfo.Name);
+                    } else
+                    {
+                        sbDebugString.AppendFormat(" + \" : \" + std::to_string({0}_) + '\\n';\n\n", fieldInfo.Name);
+                    }
+                }
             }
+
+            sbDebugString.Append("    return str;\n");
+            sbDebugString.Append("  }\n");
 
             sb.AppendFormat(" public:\n");
 
             sb.Append(sbPublic);
+
+            sb.Append(sbDebugString);
 
             sb.AppendFormat(" private:\n");
 
@@ -131,11 +149,5 @@ namespace SharpProto
 
             return sb.ToString();
         }        
-=======
-            base.CompileProto(Filename);
-
-            return false;
-        }
->>>>>>> f0238a0a914b496967a7c1cc0d8c074702807f62
     }
 }
