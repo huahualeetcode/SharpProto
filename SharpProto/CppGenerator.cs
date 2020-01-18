@@ -95,7 +95,7 @@ namespace SharpProto
       sbDebugString.AppendFormat("    std::string str;\n");
 
       sbSerializeAsString.AppendFormat("  std::string SerializeAsString() const {{\n");
-      sbSerializeAsString.AppendFormat("    std::stringstream ss;\n");
+      sbSerializeAsString.AppendFormat("    std::ostringstream ss;\n");
 
       foreach (var fieldInfo in t.GetFields())
       {
@@ -113,6 +113,7 @@ namespace SharpProto
         }
         else
         {
+
           // primitive types, e.g int
           var reference = nonReferenceTypes.Contains(fieldType.Name) ? "" : "&";
           var typeName = GetTypeName(fieldType.Name);
@@ -166,7 +167,7 @@ namespace SharpProto
     private FieldEncodingType GetFieldEncodingType(Type fieldtype)
     {
       if (fieldtype == typeof(Int32) || fieldtype == typeof(Single)) return FieldEncodingType.FieldEncodingType32Bits;
-      if (fieldtype == typeof(Int64) || fieldtype == typeof(Double)) return FieldEncodingType.FieldEncodingType32Bits;
+      if (fieldtype == typeof(Int64) || fieldtype == typeof(Double)) return FieldEncodingType.FieldEncodingType64Bits;
       return FieldEncodingType.FieldEncodingTypeFixedLength;
     }
 
